@@ -1,6 +1,6 @@
 
 import os
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 from supabase import create_client
 
@@ -36,10 +36,43 @@ def get_questions():
             .order("id")
             .execute()
         )
-        return jsonify(result.data)
+                return jsonify(result.data)
     except Exception:
         app.logger.exception("Failed to fetch questions")
         return jsonify({"error": "Could not fetch questions"}), 500
-
 if __name__ == "__main__":
-    app.run(debug=True)
+    
+@app.post("/api/questions")
+def add_question():
+    try:
+        data = request.get_json()
+
+        required = [
+            "question_text", "subject", "unit",
+            "marks", "question_type", "difficulty"
+        ]
+
+        if not data or any(field not in data for field in required):
+            return jsonify({"error": "Missing required fields"}), 400
+
+        supabase = get_supabase()
+        result = (
+            supabase.table("question_bank_questions")
+            .insert({
+                "question_text": data["question_text"],
+                "subject": data["subject"],
+                "unit": data["unit"],
+                "marks": data["marks"],
+                "question_type": data["question_type"],
+                "difficulty": data["difficulty"],
+                "previously_asked": data.get("previously_asked", False)
+            })
+            .execute()
+        )
+
+        return jsonify(result.data), 201
+
+    except Exception:
+        app.logger.exception("Failed to add question")
+        return jsonify({"error": "Could not add question"}), 500
+
