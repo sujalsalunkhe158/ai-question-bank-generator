@@ -35,6 +35,21 @@ async function fetchQuestions() {
   }));
 }
 function App(){const [page,P]=useState('Dashboard'),[qs,Q]=useState(seed),[search,S]=useState(''),[unit,U]=useState('All units'),[level,L]=useState('All levels'),[text,T]=useState(''),[formUnit,FU]=useState('Unit 1'),[marks,FM]=useState(5),[type,FT]=useState('Long answer'),[diff,FD]=useState('Medium'),[asked,FA]=useState(false),[editing,E]=useState(null),[target,TT]=useState(30),[paper,PP]=useState([]),[msg,M]=useState('');
+               useEffect(() => {
+  let active = true;
+
+  fetchQuestions()
+    .then((questions) => {
+      if (active) Q(questions);
+    })
+    .catch((error) => {
+      if (active) M(`API connection failed: ${error.message}`);
+    });
+
+  return () => {
+    active = false;
+  };
+}, []);
 const save=next=>{Q(next);localStorage.setItem('qbg-questions',JSON.stringify(next))};const filtered=useMemo(()=>qs.filter(q=>(q.text.toLowerCase().includes(search.toLowerCase()))&&(unit==='All units'||q.unit===unit)&&(level==='All levels'||q.difficulty===level)),[qs,search,unit,level]);const units=['Unit 1','Unit 2','Unit 3','Unit 4'];
 function submit(e){e.preventDefault();if(!text.trim())return;const item={id:editing||Math.max(0,...qs.map(q=>q.id))+1,text:text.trim(),unit:formUnit,marks:Number(marks),type,difficulty:diff,askedBefore:asked};save(editing?qs.map(q=>q.id===editing?item:q):[item,...qs]);T('');E(null);FA(false);M(editing?'Question updated':'Question added')}
 function generate(){let pool=qs.filter(q=>!q.askedBefore).sort((a,b)=>a.marks-b.marks),out=[],sum=0;while(pool.length){let i=pool.findIndex(q=>sum+q.marks<=Number(target));if(i<0)break;let q=pool.splice(i,1)[0];out.push(q);sum+=q.marks;if(sum===Number(target))break}PP(out);P('Generated Paper');M(sum===Number(target)?'Generated a draft with the exact target marks':`Only ${sum} of ${target} marks could be filled. Add suitable questions or change target.`)}
