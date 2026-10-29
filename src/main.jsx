@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BookOpen, LayoutDashboard, ChartColumn, FileText, Plus, Search, Trash2, Printer, RefreshCw, Sparkles } from 'lucide-react';
 import './style.css';
