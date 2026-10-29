@@ -36,11 +36,10 @@ def get_questions():
             .order("id")
             .execute()
         )
-                return jsonify(result.data)
+        return jsonify(result.data)
     except Exception:
         app.logger.exception("Failed to fetch questions")
         return jsonify({"error": "Could not fetch questions"}), 500
-if __name__ == "__main__":
     
 @app.post("/api/questions")
 def add_question():
@@ -75,4 +74,6 @@ def add_question():
     except Exception:
         app.logger.exception("Failed to add question")
         return jsonify({"error": "Could not add question"}), 500
+if __name__ == "__main__":
+    app.run(debug=True)
 
