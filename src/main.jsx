@@ -6,7 +6,34 @@ const seed = [
 ['Explain stack operations with examples.','Unit 1',5,'Long answer','Medium',false],['Define queue and explain its operations.','Unit 1',5,'Long answer','Easy',true],['Define time complexity and Big-O notation.','Unit 1',2,'Short answer','Easy',false],['Explain circular queue.','Unit 1',5,'Long answer','Medium',false],['What is a linked list? List its types.','Unit 2',2,'Short answer','Easy',false],['Explain insertion and deletion in a singly linked list.','Unit 2',5,'Long answer','Medium',false],['Compare arrays and linked lists.','Unit 2',5,'Long answer','Easy',true],['Define a doubly linked list.','Unit 2',2,'Short answer','Easy',false],['Explain binary search trees.','Unit 3',5,'Long answer','Medium',false],['Define tree height and degree.','Unit 3',2,'Short answer','Easy',false],['Explain tree traversals.','Unit 3',5,'Long answer','Hard',false],['What is hashing? Give an application.','Unit 4',2,'Short answer','Easy',false],['Explain linear probing.','Unit 4',5,'Long answer','Medium',false],['Differentiate linear and binary search.','Unit 4',5,'Long answer','Medium',false],['Explain merge sort with an example.','Unit 4',5,'Long answer','Hard',false],['What is recursion?','Unit 1',2,'Short answer','Easy',false],['Explain quick sort.','Unit 4',5,'Long answer','Hard',false],['Describe applications of trees.','Unit 3',2,'Short answer','Easy',false],['Explain stack implementation using an array.','Unit 1',5,'Long answer','Medium',false],['Write an algorithm to reverse a linked list.','Unit 2',5,'Long answer','Hard',false],['What is a complete binary tree?','Unit 3',2,'Short answer','Easy',false],['Explain double hashing.','Unit 4',5,'Long answer','Hard',false],['Define priority queue.','Unit 1',2,'Short answer','Medium',false],['Explain BFS and DFS.','Unit 3',5,'Long answer','Medium',false],['What is a circular linked list?','Unit 2',2,'Short answer','Easy',false],['Explain quadratic probing.','Unit 4',5,'Long answer','Medium',false],['State two applications of stack.','Unit 1',2,'Short answer','Easy',false],['Explain AVL tree rotations.','Unit 3',5,'Long answer','Hard',false],['Define load factor in hashing.','Unit 4',2,'Short answer','Medium',false],['Explain priority queue implementation.','Unit 1',5,'Long answer','Medium',false]
 ].map((x,i)=>({id:i+1,text:x[0],unit:x[1],marks:x[2],type:x[3],difficulty:x[4],askedBefore:x[5]}));
 const history=[{unit:'Unit 1',marks:10,type:'Long answer',difficulty:'Medium'},{unit:'Unit 1',marks:2,type:'Short answer',difficulty:'Easy'},{unit:'Unit 2',marks:10,type:'Long answer',difficulty:'Medium'},{unit:'Unit 3',marks:5,type:'Long answer',difficulty:'Hard'},{unit:'Unit 3',marks:2,type:'Short answer',difficulty:'Easy'},{unit:'Unit 4',marks:5,type:'Long answer',difficulty:'Medium'},{unit:'Unit 4',marks:2,type:'Short answer',difficulty:'Easy'}];
-function load(){try{return JSON.parse(localStorage.getItem('qbg-questions'))||seed}catch{return seed}}
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  'https://ai-question-bank-generator.onrender.com';
+
+async function fetchQuestions() {
+  const response = await fetch(`${API_BASE_URL}/api/questions`);
+
+  if (!response.ok) {
+    throw new Error(`Could not load questions: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const rows = Array.isArray(data)
+    ? data
+    : data.questions || data.data || [];
+
+  return rows.map((q) => ({
+    id: q.id,
+    text: q.question_text ?? q.text ?? '',
+    unit: q.unit ?? 'Unit 1',
+    marks: Number(q.marks ?? 5),
+    type: q.question_type ?? q.type ?? 'Long answer',
+    difficulty: q.difficulty ?? 'Medium',
+    askedBefore: Boolean(
+      q.previously_asked ?? q.askedBefore ?? false
+    ),
+  }));
+}
 function App(){const [page,P]=useState('Dashboard'),[qs,Q]=useState(load),[search,S]=useState(''),[unit,U]=useState('All units'),[level,L]=useState('All levels'),[text,T]=useState(''),[formUnit,FU]=useState('Unit 1'),[marks,FM]=useState(5),[type,FT]=useState('Long answer'),[diff,FD]=useState('Medium'),[asked,FA]=useState(false),[editing,E]=useState(null),[target,TT]=useState(30),[paper,PP]=useState([]),[msg,M]=useState('');
 const save=next=>{Q(next);localStorage.setItem('qbg-questions',JSON.stringify(next))};const filtered=useMemo(()=>qs.filter(q=>(q.text.toLowerCase().includes(search.toLowerCase()))&&(unit==='All units'||q.unit===unit)&&(level==='All levels'||q.difficulty===level)),[qs,search,unit,level]);const units=['Unit 1','Unit 2','Unit 3','Unit 4'];
 function submit(e){e.preventDefault();if(!text.trim())return;const item={id:editing||Math.max(0,...qs.map(q=>q.id))+1,text:text.trim(),unit:formUnit,marks:Number(marks),type,difficulty:diff,askedBefore:asked};save(editing?qs.map(q=>q.id===editing?item:q):[item,...qs]);T('');E(null);FA(false);M(editing?'Question updated':'Question added')}
