@@ -53,7 +53,64 @@ function App(){const [page,P]=useState('Dashboard'),[qs,Q]=useState(seed),[searc
 const save = next => {
   Q(next);
 };const filtered=useMemo(()=>qs.filter(q=>(q.text.toLowerCase().includes(search.toLowerCase()))&&(unit==='All units'||q.unit===unit)&&(level==='All levels'||q.difficulty===level)),[qs,search,unit,level]);const units=['Unit 1','Unit 2','Unit 3','Unit 4'];
-function submit(e){e.preventDefault();if(!text.trim())return;const item={id:editing||Math.max(0,...qs.map(q=>q.id))+1,text:text.trim(),unit:formUnit,marks:Number(marks),type,difficulty:diff,askedBefore:asked};save(editing?qs.map(q=>q.id===editing?item:q):[item,...qs]);T('');E(null);FA(false);M(editing?'Question updated':'Question added')}
+async function submit(e) {
+  e.preventDefault();
+
+  if (!text.trim()) return;
+
+  const payload = {
+    question_text: text.trim(),
+    subject: 'Data Structures',
+    unit: formUnit,
+    marks: Number(marks),
+    question_type: type,
+    difficulty: diff,
+    previously_asked: asked,
+  };
+
+  try {
+    if (editing) {
+      M('Editing is not connected to a backend update endpoint yet.');
+      return;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/questions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Save failed: ${response.status}`);
+    }
+
+    const result = await response.json();
+
+    const saved = result.question || result.data || result;
+
+    Q((previous) => [
+      {
+        id: saved.id ?? Date.now(),
+        text: saved.question_text ?? payload.question_text,
+        unit: saved.unit ?? payload.unit,
+        marks: Number(saved.marks ?? payload.marks),
+        type: saved.question_type ?? payload.question_type,
+        difficulty: saved.difficulty ?? payload.difficulty,
+        askedBefore: Boolean(
+          saved.previously_asked ?? payload.previously_asked
+        ),
+      },
+      ...previous,
+    ]);
+
+    T('');
+    E(null);
+    FA(false);
+    M('Question saved successfully!');
+  } catch (error) {
+    M(`Could not save question: ${error.message}`);
+  }
+}
 function generate(){let pool=qs.filter(q=>!q.askedBefore).sort((a,b)=>a.marks-b.marks),out=[],sum=0;while(pool.length){let i=pool.findIndex(q=>sum+q.marks<=Number(target));if(i<0)break;let q=pool.splice(i,1)[0];out.push(q);sum+=q.marks;if(sum===Number(target))break}PP(out);P('Generated Paper');M(sum===Number(target)?'Generated a draft with the exact target marks':`Only ${sum} of ${target} marks could be filled. Add suitable questions or change target.`)}
 function replace(q){const used=new Set(paper.map(x=>x.id));const n=qs.find(x=>!used.has(x.id)&&!x.askedBefore&&x.unit===q.unit&&x.marks===q.marks&&x.type===q.type);if(!n){M('No unused question matches this unit, marks and type.');return}PP(paper.map(x=>x.id===q.id?n:x));M('Question replaced')}
 const nav=[['Dashboard',LayoutDashboard],['Question Bank',BookOpen],['Pattern Analysis',ChartColumn],['Generated Paper',FileText]];const sum=paper.reduce((a,q)=>a+q.marks,0);return <div className="layout"><aside><div className="logo"><BookOpen/><div><b>PatternIQ</b><small>Question Bank Generator</small></div></div><p className="navlabel">WORKSPACE</p>{nav.map(([n,I])=><button className={'nav '+(page===n?'active':'')} onClick={()=>P(n)} key={n}><I size={18}/>{n}</button>)}<div className="sidefoot">● Prototype mode<small>Sample data · Local storage</small></div></aside><main><header><div><small>ACADEMIC TOOLS / 2026–27</small><h1>{page}</h1></div><span className="badge">● Demo environment</span></header>{msg&&<div className="notice">{msg}<button onClick={()=>M('')}>×</button></div>}
